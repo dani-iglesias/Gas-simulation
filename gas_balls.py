@@ -8,10 +8,7 @@ from itertools import combinations
 class Ball(object):   
     def __init__(self, canvas, *args, **kwargs):
         self.canvas = canvas # The canvas is defined inside other class
-        self.oval = canvas.create_oval(*args, **kwargs)        
-        #self.step_x = random.gauss(0,1) # step size which the ball is moving every iteration
-        #self.step_y = random.gauss(0,1)
-        
+        self.oval = canvas.create_oval(*args, **kwargs)               
         self.v = np.array((random.gauss(0,1), random.gauss(0,1))) 
         
        
@@ -24,11 +21,23 @@ class Ball(object):
         if x2 > 500:
             self.v[0] = -self.v[0]
         if y2 > 500:
-            self.v[1] = -self.v[1]
-        #self.canvas.move(self.oval, self.v[0], self.v[1])
-        
+            self.v[1] = -self.v[1]        
         self.pos = np.array((x1 + (x2 - x1)/2, 
                          y1 + (y2 - y1)/2)) # center position of ball       
+        
+    def overlap(self, other):
+        
+        d = ((self.pos[0] - other.pos[0])**2 +
+            (self.pos[1] - other.pos[1])**2)**0.5
+        
+        if d < App.b_size:
+            return True
+        else:
+            return False   
+        
+        
+    def Movement(self):
+        self.canvas.move(self.oval, self.v[0], self.v[1])
 
 
 class App(object):
@@ -49,28 +58,14 @@ class App(object):
                            outline='white', fill = 'red') for i in range(App.N)] # creates N balls randomly placed
 
         self.master.after(0, self.animate)
-        '''    
-    def overlap(self, other):
+
         
-        d = ((self.pos[0] - other.pos[0])**2 +
-            (self.pos[1] - other.pos[1])**2)**0.
-        
-        if d < App.b_size:
-            return True
-        else:
-            return False
-        '''        
     def collision(self):
         
         pairs = combinations(range(App.N), 2)
         for i,j in pairs:
+            if self.balls[i].overlap(self.balls[j]) == True:
 
-
-            d = ((self.balls[i].pos[0] - self.balls[j].pos[0])**2 +
-            (self.balls[i].pos[1] - self.balls[j].pos[1])**2)**0.5
-            
-            if d < App.b_size:
-                
                     
                 n = self.balls[i].v # previous velocity so that we don´t use the changed velocity
                 m = self.balls[j].v
@@ -86,16 +81,14 @@ class App(object):
                 np.linalg.norm(self.balls[j].pos - self.balls[i].pos)**2
 
 
-        for x in self.balls:
-            x.canvas.move(x.oval, x.v[0], x.v[1])
-
-
 
     def animate(self):
         for ball in self.balls:
            ball.bounce_walls()
         self.collision()
-        self.master.after(5, self.animate)    
+        for ball in self.balls:
+            ball.Movement()
+        self.master.after(10, self.animate)    
 
 
 root = tk.Tk()
