@@ -7,13 +7,20 @@ from itertools import combinations
 
 class Ball(object):   
     def __init__(self, canvas, *args, **kwargs):
-        self.canvas = canvas # The canvas is defined inside other class
+        self.canvas = canvas 
         self.oval = canvas.create_oval(*args, **kwargs)               
-        self.v = np.array((random.gauss(0,1), random.gauss(0,1))) 
+        self.v = np.array((random.gauss(0,1), random.gauss(0,1)))
         
-       
-    def bounce_walls(self):
         x1, y1, x2, y2 = self.canvas.bbox(self.oval) # returns tuple with dimensions of rectangle enclosing Ball
+        self.pos = np.array((x1 + (x2 - x1)/2, 
+                         y1 + (y2 - y1)/2)) # center position of ball 
+
+        
+    def bounce_walls(self):
+        
+        x1, y1, x2, y2 = self.canvas.bbox(self.oval)
+        self.pos = np.array((x1 + (x2 - x1)/2, y1 + (y2 - y1)/2)) # update ball position every iteration through animate
+        
         if x1 < 0:
             self.v[0] = -self.v[0]
         if y1 < 0:
@@ -22,8 +29,9 @@ class Ball(object):
             self.v[0] = -self.v[0]
         if y2 > 500:
             self.v[1] = -self.v[1]        
-        self.pos = np.array((x1 + (x2 - x1)/2, 
-                         y1 + (y2 - y1)/2)) # center position of ball       
+              
+    def remove(self, canvas):
+        self.canvas.delete(self.oval)
         
     def overlap(self, other):
         
@@ -48,15 +56,37 @@ class App(object):
         self.master = master
         self.canvas = tk.Canvas(self.master, width=500, height=500) #dimensions of window  
         self.canvas.pack()
+                
+        self.balls = []
+        for j in range(App.N):
+            
+            self.place_x = (App.frame_size - App.b_size)*random.random()
+            self.place_y = (App.frame_size - App.b_size)*random.random()
+            
+            self.balls.append(Ball(self.canvas, self.place_x, self.place_y,
+                        self.place_x+App.b_size, self.place_y+App.b_size,
+                        outline='white', fill = 'red')) # creates N balls randomly placed
+            Free = False
+            while Free == False: 
+                Free = True
+                for i in range(len(self.balls)-1):
+                    if self.balls[-1].overlap(self.balls[i])==True: # delete ball if overlaps with other balls
+                    
+                    
+                        Free = False
+                        
+                        self.canvas.delete(self.balls[-1].oval) # delete last ball from canvas                
+                        del self.balls[-1] # delete last ball from list
+                        
+                        
+                        self.place_x = (App.frame_size - App.b_size)*random.random()
+                        self.place_y = (App.frame_size - App.b_size)*random.random()
         
-
-        self.place_x = [(App.frame_size - App.b_size)*random.random() for i in range(App.N)]
-        self.place_y = [(App.frame_size - App.b_size)*random.random() for i in range(App.N)]
-        
-        self.balls = [Ball(self.canvas, self.place_x[i], self.place_y[i],
-                           self.place_x[i]+App.b_size, self.place_y[i]+App.b_size,
-                           outline='white', fill = 'red') for i in range(App.N)] # creates N balls randomly placed
-
+                        self.balls.append(Ball(self.canvas, self.place_x, self.place_y,
+                           self.place_x+App.b_size, self.place_y+App.b_size,
+                           outline='white', fill = 'red')) # creates N balls randomly placed
+                       
+        print(len(self.balls))
         self.master.after(0, self.animate)
 
         
@@ -69,7 +99,8 @@ class App(object):
                     
                 n = self.balls[i].v # previous velocity so that we don´t use the changed velocity
                 m = self.balls[j].v
-                    
+                
+                # velocity change in elastic collisions
                 self.balls[i].v = n - \
                 np.dot(n - m, self.balls[i].pos - self.balls[j].pos) * \
                 (self.balls[i].pos - self.balls[j].pos) / \
@@ -88,9 +119,10 @@ class App(object):
         self.collision()
         for ball in self.balls:
             ball.Movement()
-        self.master.after(10, self.animate)    
+        self.master.after(5, self.animate)    
 
 
 root = tk.Tk()
+root.title('Elastic collisions')
 app = App(root)
 root.mainloop()
