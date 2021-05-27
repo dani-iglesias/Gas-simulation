@@ -21,14 +21,15 @@ class Ball(object):
         x1, y1, x2, y2 = self.canvas.bbox(self.oval)
         self.pos = np.array((x1 + (x2 - x1)/2, y1 + (y2 - y1)/2)) # update ball position every iteration through animate
         
-        if x1 < 0:
-            self.v[0] = -self.v[0]
-        if y1 < 0:
-            self.v[1] = -self.v[1]
-        if x2 > 500:
-            self.v[0] = -self.v[0]
-        if y2 > 500:
-            self.v[1] = -self.v[1]        
+        # using abs values prevents ball from getting stuck at wall
+        if x1 < 20:
+            self.v[0] = abs(self.v[0])
+        if y1 < 70:
+            self.v[1] = abs(self.v[1])
+        if x2 > App.frame_width+20:
+            self.v[0] = -abs(self.v[0])
+        if y2 > App.frame_height+70:
+            self.v[1] = -abs(self.v[1])        
               
     def remove(self, canvas):
         self.canvas.delete(self.oval)
@@ -49,22 +50,24 @@ class Ball(object):
 
 
 class App(object):
-    N = 5 # number of balls
-    frame_size = 500
-    b_size = 60
+    N = 30 # number of balls
+    frame_height = 500
+    frame_width = 700
+    b_size = 30
     def __init__(self, master, **kwargs):
         self.master = master
-        self.canvas = tk.Canvas(self.master, width=500, height=500) #dimensions of window  
-        self.canvas.pack()
-                
+        self.canvas = tk.Canvas(self.master, width=App.frame_width+40, height=App.frame_height+90) #dimensions of window  
+
+        self.rectangle = self.canvas.create_rectangle(20, 70, App.frame_width+20, App.frame_height+70, outline='black')
+        self.canvas.pack()                
         self.balls = []
         for j in range(App.N):
             
-            self.place_x = (App.frame_size - App.b_size)*random.random()
-            self.place_y = (App.frame_size - App.b_size)*random.random()
+            self.place_x = (App.frame_width - App.b_size)*random.random()
+            self.place_y = (App.frame_height - App.b_size)*random.random()
             
-            self.balls.append(Ball(self.canvas, self.place_x, self.place_y,
-                        self.place_x+App.b_size, self.place_y+App.b_size,
+            self.balls.append(Ball(self.canvas,self.place_x+20, self.place_y+70,
+                        self.place_x+20+App.b_size, self.place_y+70+App.b_size,
                         outline='white', fill = 'red')) # creates N balls randomly placed
             Free = False
             while Free == False: 
@@ -79,8 +82,8 @@ class App(object):
                         del self.balls[-1] # delete last ball from list
                         
                         
-                        self.place_x = (App.frame_size - App.b_size)*random.random()
-                        self.place_y = (App.frame_size - App.b_size)*random.random()
+                        self.place_x = (App.frame_width - App.b_size)*random.random()
+                        self.place_y = (App.frame_height - App.b_size)*random.random()
         
                         self.balls.append(Ball(self.canvas, self.place_x, self.place_y,
                            self.place_x+App.b_size, self.place_y+App.b_size,
@@ -119,7 +122,7 @@ class App(object):
         self.collision()
         for ball in self.balls:
             ball.Movement()
-        self.master.after(5, self.animate)    
+        self.master.after(20, self.animate)    
 
 
 root = tk.Tk()
